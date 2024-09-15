@@ -9,23 +9,49 @@ public class AmbulancePlayer : MonoBehaviour
     public float rotationSpeed = 50f;     // Velocidade de rotação do carro
     public float maxSpeed = 20f;          // Velocidade máxima do carro
     public float acceleration = 35f;      // Taxa de aceleração
-    public float deceleration = 20f;      // Taxa de desaceleração (ajustada para ser mais realista)
+    public float deceleration = 35f;      // Taxa de desaceleração (ajustada para ser mais realista)
     public float reverseDeceleration = 30f; // Taxa de desaceleração quando a direção é oposta (ajustada para ser mais realista)
     public float turnSmoothness = 2f;     // Suavidade da rotação
+    public float minTurningSpeed = 5f;    // Velocidade mínima para começar a virar
+    public float turnTransitionSpeed = 1f; // Velocidade da transição para a rotação
 
-    public Slider speedSlider;            // Referência ao Slider de velocidade
     public RectTransform speedometerNeedle; // Referência à agulha do velocímetro
+
+    public AudioClip engineSound;          // Som do motor
+    public AudioSource audioSource;       // Referência ao componente AudioSource
 
     private float currentSpeed = 0f;      // Velocidade atual do carro
     private float turnInput = 0f;         // Entrada para rotação
+    private bool isMoving = false;        // Indica se o carro está se movendo
 
-    // Update é chamado uma vez por frame
-    void Update()
+    private void Start()
     {
-        // Input para o eixo vertical (W e S) para controlar a aceleração
-        float moveZ = Input.GetAxis("Vertical");
+        audioSource = GetComponent<AudioSource>();
+        audioSource.clip = engineSound;
+        audioSource.loop = true; // Define o som como um loop
+        audioSource.Play(); // Inicia o som do motor
+    }
 
-        // Se a entrada do jogador estiver na direção oposta ao movimento atual, frear mais rapidamente
+    private void Update()
+    {
+        PlayerMovement();
+        transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
+        UpdateMeters();
+        UpdateEngineSound();
+    }
+
+    void PlayerMovement()
+    {
+        float moveZ = Input.GetAxis("Vertical");
+        float moveX = Input.GetAxis("Horizontal");
+        isMoving = moveZ != 0;
+
+        MoveVertically(moveZ);
+        MoveHorizontally(moveX);
+    }
+
+    void MoveVertically(float moveZ)
+    {
         if (moveZ != 0)
         {
             if (Mathf.Sign(moveZ) != Mathf.Sign(currentSpeed) && currentSpeed != 0)
@@ -46,43 +72,60 @@ public class AmbulancePlayer : MonoBehaviour
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0, deceleration * Time.deltaTime);
         }
 
-        // Movimenta o carro para frente e para trás
-        transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
+        // Atualiza o estado de movimentação
+        isMoving = currentSpeed != 0;
+    }
 
-        // Input para o eixo horizontal (A e D) para controlar a rotação
-        float moveX = Input.GetAxis("Horizontal");
-
-        // Atualiza a entrada de rotação
-        if (moveX != 0 && currentSpeed != 0)
+    void MoveHorizontally(float moveX)
+    {
+        // Ajusta o input para rotação
+        if (Mathf.Abs(currentSpeed) >= minTurningSpeed || currentSpeed == 0)
         {
-            // Lerp para suavizar a rotação
-            turnInput = Mathf.Lerp(turnInput, moveX, turnSmoothness * Time.deltaTime);
+            // Calcula a velocidade atual proporcional para a rotação
+            float turnSpeed = Mathf.Clamp01((Mathf.Abs(currentSpeed) - minTurningSpeed) / (maxSpeed - minTurningSpeed));
+
+            if (moveX != 0)
+            {
+                // Atualiza a entrada de rotação
+                turnInput = Mathf.Lerp(turnInput, moveX, turnSmoothness * Time.deltaTime * turnSpeed);
+            }
+            else
+            {
+                // Gradualmente retorna a rotação para zero quando não está virando
+                turnInput = Mathf.Lerp(turnInput, 0, turnSmoothness * Time.deltaTime);
+            }
+
+            // Rotaciona o carro suavemente com base na velocidade
+            if (currentSpeed != 0)
+            {
+                float rotationAmount = turnInput * rotationSpeed * Time.deltaTime * Mathf.Sign(currentSpeed);
+                transform.Rotate(Vector3.up * rotationAmount);
+            }
         }
         else
         {
-            // Gradualmente retorna a rotação para zero quando não está virando
+            // Quando não está se movendo ou a velocidade está abaixo do limite de rotação, retorna a rotação para zero
             turnInput = Mathf.Lerp(turnInput, 0, turnSmoothness * Time.deltaTime);
         }
+    }
 
-        // Rotaciona o carro suavemente com base na velocidade
-        if (currentSpeed != 0)
-        {
-            float rotationAmount = turnInput * rotationSpeed * Time.deltaTime * Mathf.Sign(currentSpeed);
-            transform.Rotate(Vector3.up * rotationAmount);
-        }
-
-        // Atualiza o valor do Slider com a velocidade atual
-        if (speedSlider != null)
-        {
-            speedSlider.value = Mathf.Abs(currentSpeed); // Valor absoluto para mostrar velocidade positiva
-        }
-
+    void UpdateMeters()
+    {
         // Atualiza o ângulo da agulha do velocímetro com base na velocidade
         if (speedometerNeedle != null)
         {
             // Converte a velocidade em um ângulo (0 a 180 graus, ajustável)
             float needleAngle = Mathf.Lerp(0f, -270f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
             speedometerNeedle.localRotation = Quaternion.Euler(0f, 0f, needleAngle);
+        }
+    }
+
+    void UpdateEngineSound()
+    {
+        if (audioSource != null && engineSound != null)
+        {
+            // Ajusta o pitch do áudio com base na velocidade
+            audioSource.pitch = Mathf.Lerp(1f, 2f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
         }
     }
 }
