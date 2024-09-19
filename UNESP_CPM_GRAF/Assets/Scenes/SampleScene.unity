@@ -1028,7 +1028,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -358.486}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -339, y: -316.8}
+  m_AnchoredPosition: {x: -337.4, y: -315.4}
   m_SizeDelta: {x: 6.533334, y: 29.066664}
   m_Pivot: {x: 0.5, y: 0.88}
 --- !u!114 &1420134006
@@ -1283,11 +1283,11 @@ MonoBehaviour:
   moveSpeed: 5
   rotationSpeed: 100
   maxSpeed: 20
-  acceleration: 5
-  deceleration: 5
+  acceleration: 8
+  deceleration: 9
   reverseDeceleration: 15
   turnSmoothness: 2
-  minTurningSpeed: 5
+  minTurningSpeed: 1
   turnTransitionSpeed: 1
   speedometerNeedle: {fileID: 1420134005}
   engineSound: {fileID: 8300000, guid: f42ee6c61e2b5a049b588a485b2f267f, type: 3}
