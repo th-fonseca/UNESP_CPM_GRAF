@@ -1,70 +1,228 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.VersionControl;
 using UnityEngine;
 
-public class tryMove : MonoBehaviour
+public class AmbulanceMovement : MonoBehaviour
 {
-    public GameObject wheel_frontRight;
-    public GameObject wheel_frontLeft;
-    public GameObject wheel_backRight;
-    public GameObject wheel_backLeft;
+    //Colisores
+    public WheelCollider frontLeftWheelCollider;
+    public WheelCollider frontRightWheelCollider;
+    public WheelCollider rearLeftWheelCollider;
+    public WheelCollider rearRightWheelCollider;
 
-    public WheelCollider W_FR;
-    public WheelCollider W_FL;
-    public WheelCollider W_BR;
-    public WheelCollider W_BL;
+    //Transformadores
+    public Transform frontLeftWheelTransform;
+    public Transform frontRightWheelTransform;
+    public Transform rearLeftWheelTransform;
+    public Transform rearRightWheelTransform;
 
-    public float speed = 1000f;
-    public float lowestSpeed = 20f;
-    public float lowestAngle = 70f;
-    public float highestAngle = 40f;
-    public float steerSmoothness = 10f;  // Taxa de suavização da direção
-    public float steerMultiplier = 2f;  // Multiplicador para a resposta do volante
-    public float accelerationFactor = 0.5f;  // Fator de aceleração ao virar
-    public float rotationSpeed = 100f;   // Velocidade de rotação adicional para curvas
+    public Material brakeLights;
+    public Material headLights;
+    public Material blueLights;
 
-    private float currentSteerAngle = 0f;  // Armazena o ângulo de direção atual
+
+    public Light leftHeadLight;
+    public Light rightHeadLight;
+    // Referência à agulha do velocímetro
+    public RectTransform speedometerNeedle;
+
+    //Velocidade
+    public float motorForce = 12000f;
+    public float maxSpeed = 50f;
+    private float currentSpeed = 0f;
+
+    //Breque
+    private bool isBreaking;
+    private float currentbreakForce;
+    public float breakForce = 7000f;
+
+    //Virada
+    public float maxSteerAngle = 30f;
+    private float currentSteerAngle = 0f;
+
+    //Luzes
+    private bool isSirenOn = false;
+    private Coroutine sirenCoroutine;
+
+    private bool isHeadlightOn = false;
+    private float lastLightToggleTime = 0f;
+
+
+    //Som
+    public AudioClip engineSound;        
+    public AudioSource engineAudioSource;     
+
+    public AudioClip hornSound;         
+    public AudioSource hornAudioSource;
+
+    public AudioClip sirenSound;
+    public AudioSource sirenAudioSource;
+
 
     void Start()
     {
-
+        SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
+        SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
+        SetLightEmission(blueLights, isSirenOn, Color.cyan, Color.black);
+        leftHeadLight.enabled = false;
+        rightHeadLight.enabled = false;
+        sirenAudioSource.clip = sirenSound;
+        hornAudioSource.clip = hornSound;
+        engineAudioSource.clip = engineSound;
+        engineAudioSource.Play();
     }
 
-    void FixedUpdate()
+    void Update()
     {
-        carMove();
+        PlayerMovement();
+        UpdateMeters();
+    }
+    void PlayerMovement()
+    {
+        float moveZ = Input.GetAxis("Vertical");
+        float moveX = Input.GetAxis("Horizontal");
+        isBreaking = Input.GetKey(KeyCode.Space);
+
+        MoveVertically(moveZ);
+        MoveHorizontally(moveX);
+        UpdateWheels();
+        UpdateLights();
+        UpdateSounds();
+        ApplyBrakes();
     }
 
-    void carMove()
+    void ApplyBrakes()
     {
-        // Aplica torque nas rodas traseiras para o movimento em linha reta
-        W_BL.motorTorque = speed * Input.GetAxis("Vertical");
-        W_BR.motorTorque = speed * Input.GetAxis("Vertical");
+        currentbreakForce = isBreaking ? breakForce : 0f;
+        SetLightEmission(brakeLights,isBreaking,Color.red,Color.black);
+        frontRightWheelCollider.brakeTorque = currentbreakForce;
+        frontLeftWheelCollider.brakeTorque = currentbreakForce;
+        rearLeftWheelCollider.brakeTorque = currentbreakForce;
+        rearRightWheelCollider.brakeTorque = currentbreakForce;
+    }
 
-        // Calcula o fator de velocidade para o ângulo de direção
-        float speedFactor = this.GetComponent<Rigidbody>().velocity.magnitude / lowestSpeed;
+    void MoveVertically(float moveZ)
+    {
+        currentSpeed = this.GetComponent<Rigidbody>().velocity.magnitude * 3.6f;
 
-        // Calcula o ângulo de direção alvo considerando a aceleração
-        float targetAngle = Mathf.Lerp(lowestAngle, highestAngle, speedFactor) * Input.GetAxis("Horizontal") * steerMultiplier;
-
-        // Reduz a influência do ângulo alvo quando acelerando
-        if (Input.GetAxis("Vertical") > 0)
+        if (moveZ != 0 && currentSpeed <= maxSpeed)
         {
-            targetAngle *= accelerationFactor;  // Diminui a resposta do ângulo ao acelerar
+            rearLeftWheelCollider.motorTorque = motorForce * moveZ;
+            rearRightWheelCollider.motorTorque = motorForce * moveZ;
+            rearLeftWheelCollider.brakeTorque = 0f;
+            rearRightWheelCollider.brakeTorque = 0f;
+            
+        } else {
+            rearLeftWheelCollider.motorTorque = 0f;
+            rearRightWheelCollider.motorTorque = 0f;
+            rearLeftWheelCollider.brakeTorque = motorForce;
+            rearRightWheelCollider.brakeTorque = motorForce;
+        }
+    }
+
+    void MoveHorizontally(float moveX)
+    {
+        currentSteerAngle = maxSteerAngle * moveX;
+        frontLeftWheelCollider.steerAngle = currentSteerAngle;
+        frontRightWheelCollider.steerAngle = currentSteerAngle;
+    }
+
+    void UpdateMeters()
+    {
+        if (speedometerNeedle != null)
+        {
+            float needleAngle = Mathf.Lerp(0f, -270f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
+            speedometerNeedle.localRotation = Quaternion.Euler(0f, 0f, needleAngle);
+        }
+    }
+
+    void UpdateLights()
+    {
+        if (Input.GetKey(KeyCode.F) && Time.time - lastLightToggleTime > 0.5f)
+        {
+            isHeadlightOn = !isHeadlightOn;
+            SetLightEmission(headLights,isHeadlightOn,Color.white,Color.black);
+            SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
+            lastLightToggleTime = Time.time;
+            leftHeadLight.enabled = isHeadlightOn;
+            rightHeadLight.enabled = isHeadlightOn;
         }
 
-        // Suaviza a transição entre o ângulo atual e o ângulo alvo
-        currentSteerAngle = Mathf.LerpAngle(currentSteerAngle, targetAngle, steerSmoothness * Time.deltaTime);
-
-        // Aplica o ângulo suavizado nas rodas dianteiras
-        W_FL.steerAngle = currentSteerAngle;
-        W_FR.steerAngle = currentSteerAngle;
-
-        // Adiciona uma rotação suave ao veículo nas curvas (opcional)
-        if (Mathf.Abs(Input.GetAxis("Horizontal")) > 0)
+        if (Input.GetKeyDown(KeyCode.Q) && Time.time - lastLightToggleTime > 0.5f)
         {
-            // Gira o veículo diretamente quando está virando, baseado no input horizontal
-            transform.Rotate(Vector3.up, Input.GetAxis("Horizontal") * rotationSpeed * Time.deltaTime);
+            isSirenOn = !isSirenOn;
+
+            if (isSirenOn)
+            {
+                sirenCoroutine = StartCoroutine(BlinkSirenLights());
+                sirenAudioSource.Play();
+            }
+            else
+            {
+                StopCoroutine(sirenCoroutine);
+                SetLightEmission(blueLights, false, Color.cyan, Color.black); // Apagar a sirene
+                sirenAudioSource.Stop();
+            }
         }
     }
+
+    IEnumerator BlinkSirenLights()
+    {
+        while (true)
+        {
+            blueLights.SetColor("_EmissionColor", Color.cyan);
+            yield return new WaitForSeconds(0.1f); // Tempo de piscar
+
+            // Alterna as luzes
+            blueLights.SetColor("_EmissionColor", Color.black);
+            yield return new WaitForSeconds(0.1f); // Tempo de piscar
+        }
+    }
+
+    void UpdateSounds()
+    {
+        if (engineAudioSource != null && engineSound != null)
+        {
+            engineAudioSource.pitch = Mathf.Lerp(1f, 2f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
+        }
+        if (Input.GetKey(KeyCode.E))
+        {
+            if (hornAudioSource != null && !hornAudioSource.isPlaying)
+            {
+                hornAudioSource.loop = true;  // Define o som da buzina para tocar em loop
+                hornAudioSource.Play();
+            }
+        }
+        else if (Input.GetKeyUp(KeyCode.E))
+        {
+            if (hornAudioSource != null && hornAudioSource.isPlaying)
+            {
+                hornAudioSource.loop = false;  // Remove o loop quando a tecla é solta
+                hornAudioSource.Stop();
+            }
+        }
+    }
+
+    void SetLightEmission(Material materialToLight, bool shouldBeLit, Color lightOn, Color lightOff)
+    {
+        materialToLight.SetColor("_EmissionColor", shouldBeLit ? lightOn : lightOff);
+        materialToLight.EnableKeyword("_EMISSION");
+    }
+
+    private void UpdateWheels()
+    {
+        UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
+        UpdateSingleWheel(frontRightWheelCollider, frontRightWheelTransform);
+        UpdateSingleWheel(rearRightWheelCollider, rearRightWheelTransform);
+        UpdateSingleWheel(rearLeftWheelCollider, rearLeftWheelTransform);
+    }
+
+    void UpdateSingleWheel(WheelCollider wheelCollider, Transform wheelTransform)
+    {
+        wheelCollider.GetWorldPose(out _, out Quaternion rot);
+        wheelTransform.rotation = rot;
+    }
+
 }
