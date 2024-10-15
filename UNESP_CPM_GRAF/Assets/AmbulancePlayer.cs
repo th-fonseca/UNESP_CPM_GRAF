@@ -51,10 +51,10 @@ public class AmbulanceMovement : MonoBehaviour
 
 
     //Som
-    public AudioClip engineSound;        
-    public AudioSource engineAudioSource;     
+    public AudioClip engineSound;
+    public AudioSource engineAudioSource;
 
-    public AudioClip hornSound;         
+    public AudioClip hornSound;
     public AudioSource hornAudioSource;
 
     public AudioClip sirenSound;
@@ -96,7 +96,7 @@ public class AmbulanceMovement : MonoBehaviour
     void ApplyBrakes()
     {
         currentbreakForce = isBreaking ? breakForce : 0f;
-        SetLightEmission(brakeLights,isBreaking,Color.red,Color.black);
+        SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
         frontRightWheelCollider.brakeTorque = currentbreakForce;
         frontLeftWheelCollider.brakeTorque = currentbreakForce;
         rearLeftWheelCollider.brakeTorque = currentbreakForce;
@@ -113,8 +113,10 @@ public class AmbulanceMovement : MonoBehaviour
             rearRightWheelCollider.motorTorque = motorForce * moveZ;
             rearLeftWheelCollider.brakeTorque = 0f;
             rearRightWheelCollider.brakeTorque = 0f;
-            
-        } else {
+
+        }
+        else
+        {
             rearLeftWheelCollider.motorTorque = 0f;
             rearRightWheelCollider.motorTorque = 0f;
             rearLeftWheelCollider.brakeTorque = motorForce;
@@ -143,14 +145,14 @@ public class AmbulanceMovement : MonoBehaviour
         if (Input.GetKey(KeyCode.F) && Time.time - lastLightToggleTime > 0.5f)
         {
             isHeadlightOn = !isHeadlightOn;
-            SetLightEmission(headLights,isHeadlightOn,Color.white,Color.black);
+            SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
             SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
             lastLightToggleTime = Time.time;
             leftHeadLight.enabled = isHeadlightOn;
             rightHeadLight.enabled = isHeadlightOn;
         }
 
-        if (Input.GetKeyDown(KeyCode.Q) && Time.time - lastLightToggleTime > 0.5f)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time - lastLightToggleTime > 0.5f)
         {
             isSirenOn = !isSirenOn;
 
@@ -187,7 +189,7 @@ public class AmbulanceMovement : MonoBehaviour
         {
             engineAudioSource.pitch = Mathf.Lerp(1f, 2f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
         }
-        if (Input.GetKey(KeyCode.E))
+        if (Input.GetKey(KeyCode.Q))
         {
             if (hornAudioSource != null && !hornAudioSource.isPlaying)
             {
@@ -195,7 +197,7 @@ public class AmbulanceMovement : MonoBehaviour
                 hornAudioSource.Play();
             }
         }
-        else if (Input.GetKeyUp(KeyCode.E))
+        else if (Input.GetKeyUp(KeyCode.Q))
         {
             if (hornAudioSource != null && hornAudioSource.isPlaying)
             {
