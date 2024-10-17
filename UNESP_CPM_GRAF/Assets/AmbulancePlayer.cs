@@ -35,6 +35,7 @@ public class AmbulanceMovement : MonoBehaviour
 
     //Breque
     private bool isBreaking;
+    private bool isReversing = false;
     private float currentbreakForce;
     public float breakForce = 7000f;
 
@@ -74,7 +75,7 @@ public class AmbulanceMovement : MonoBehaviour
         engineAudioSource.Play();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         PlayerMovement();
         UpdateMeters();
@@ -84,6 +85,7 @@ public class AmbulanceMovement : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");
         float moveX = Input.GetAxis("Horizontal");
         isBreaking = Input.GetKey(KeyCode.Space);
+        isReversing = Input.GetKey(KeyCode.S);
 
         MoveVertically(moveZ);
         MoveHorizontally(moveX);
@@ -96,7 +98,15 @@ public class AmbulanceMovement : MonoBehaviour
     void ApplyBrakes()
     {
         currentbreakForce = isBreaking ? breakForce : 0f;
-        SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
+
+        if (isBreaking)
+            SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
+        else
+        if (isReversing)
+            SetLightEmission(brakeLights, isReversing, Color.grey, Color.black);
+        else
+            SetLightEmission(brakeLights, false, Color.black, Color.black);
+
         frontRightWheelCollider.brakeTorque = currentbreakForce;
         frontLeftWheelCollider.brakeTorque = currentbreakForce;
         rearLeftWheelCollider.brakeTorque = currentbreakForce;
@@ -143,9 +153,8 @@ public class AmbulanceMovement : MonoBehaviour
     void UpdateLights()
     {
         if (Input.GetKey(KeyCode.F) && Time.time - lastLightToggleTime > 0.5f)
-        {
+        {   
             isHeadlightOn = !isHeadlightOn;
-            SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
             SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
             lastLightToggleTime = Time.time;
             leftHeadLight.enabled = isHeadlightOn;
@@ -168,6 +177,11 @@ public class AmbulanceMovement : MonoBehaviour
                 sirenAudioSource.Stop();
             }
         }
+
+        //if (isReversing) 
+        //{
+        //    SetLightEmission(brakeLights, isReversing, Color.red, Color.black);
+        //}
     }
 
     IEnumerator BlinkSirenLights()
