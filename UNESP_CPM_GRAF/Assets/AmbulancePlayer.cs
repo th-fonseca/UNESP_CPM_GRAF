@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor.VersionControl;
 using UnityEngine;
 
-public class AmbulanceMovement : MonoBehaviour
+public class AmbulancePlayer : MonoBehaviour
 {
     //Colisores
     public WheelCollider frontLeftWheelCollider;
@@ -32,10 +32,10 @@ public class AmbulanceMovement : MonoBehaviour
     public float motorForce = 12000f;
     public float maxSpeed = 50f;
     private float currentSpeed = 0f;
+    private bool isReversing = false;
 
     //Breque
     private bool isBreaking;
-    private bool isReversing = false;
     private float currentbreakForce;
     public float breakForce = 7000f;
 
@@ -75,7 +75,7 @@ public class AmbulanceMovement : MonoBehaviour
         engineAudioSource.Play();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         PlayerMovement();
         UpdateMeters();
@@ -98,15 +98,7 @@ public class AmbulanceMovement : MonoBehaviour
     void ApplyBrakes()
     {
         currentbreakForce = isBreaking ? breakForce : 0f;
-
-        if (isBreaking)
-            SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
-        else
-        if (isReversing)
-            SetLightEmission(brakeLights, isReversing, Color.grey, Color.black);
-        else
-            SetLightEmission(brakeLights, false, Color.black, Color.black);
-
+        SetLightEmission(brakeLights, isBreaking ? isBreaking : isReversing, isBreaking ? Color.red : (isReversing ? Color.grey : Color.black), Color.black);
         frontRightWheelCollider.brakeTorque = currentbreakForce;
         frontLeftWheelCollider.brakeTorque = currentbreakForce;
         rearLeftWheelCollider.brakeTorque = currentbreakForce;
@@ -177,11 +169,6 @@ public class AmbulanceMovement : MonoBehaviour
                 sirenAudioSource.Stop();
             }
         }
-
-        //if (isReversing) 
-        //{
-        //    SetLightEmission(brakeLights, isReversing, Color.red, Color.black);
-        //}
     }
 
     IEnumerator BlinkSirenLights()
