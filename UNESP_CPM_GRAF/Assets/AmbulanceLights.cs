@@ -21,8 +21,8 @@ public class AmbulanceLights : MonoBehaviour
     private float lastLightToggleTime = 0f;
 
     // Parâmetros de duração e cooldown
-    private float sirenDuration = 5f; // Duração da sirene em segundos
-    private float sirenCooldown = 7f; // Tempo de cooldown em segundos
+    private readonly float sirenDuration = 5f; // Duração da sirene em segundos
+    private readonly float sirenCooldown = 7f; // Tempo de cooldown em segundos
     private bool isCooldownActive = false;
     private float cooldownTimer = 0f; // Para controlar o tempo restante de cooldown
 
