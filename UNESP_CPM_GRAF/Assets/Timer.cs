@@ -22,7 +22,7 @@ public class Timer : MonoBehaviour
             timeRemaining -= Time.deltaTime; 
             UpdateTimerDisplay(); 
 
-            if (timeRemaining <= 290f)
+            if (timeRemaining <= 0)
             {
                 timeRemaining = 0;
                 StopTimer();  
