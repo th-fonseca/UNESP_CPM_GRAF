@@ -16,6 +16,7 @@ public class MissionWaypoint : MonoBehaviour
 
     private void Update()
     {
+        if (!Camera.main) return;
         float minX = img.GetPixelAdjustedRect().width / 2;
         float maxX = Screen.width - minX;
 

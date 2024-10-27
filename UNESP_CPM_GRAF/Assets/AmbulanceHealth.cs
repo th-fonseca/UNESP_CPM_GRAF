@@ -51,7 +51,7 @@ public class AmbulanceHealth : MonoBehaviour
                 StartCoroutine(HealthChange(healthValue, newHealthValue));
                 healthValue = newHealthValue;
                 damageTime = Time.time;
-                audioSource.PlayOneShot(collisionSound);
+                if(audioSource.enabled) audioSource.PlayOneShot(collisionSound);
             }
         }
         // Colisão com a tag "Stop" e sirene desligada
@@ -64,8 +64,8 @@ public class AmbulanceHealth : MonoBehaviour
             {
                 StartCoroutine(HealthChange(healthValue, newHealthValue));
                 healthValue = newHealthValue;
-                damageTime = Time.time;      
-                audioSource.PlayOneShot(stopSound);
+                damageTime = Time.time;
+                if (audioSource.enabled) audioSource.PlayOneShot(stopSound);
                 
             }
         }
@@ -89,4 +89,5 @@ public class AmbulanceHealth : MonoBehaviour
         float healthAmount = (health / maxHealth) * 180.0f / 360;
         healthBar.fillAmount = healthAmount;
     }
+
 }
