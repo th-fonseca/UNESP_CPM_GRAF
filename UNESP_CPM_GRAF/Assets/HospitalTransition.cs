@@ -1,22 +1,27 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public class HospitalTransition : MonoBehaviour
 {
     public Camera playerCamera;  // Câmera principal
     public Camera hospitalCamera;  // Câmera do hospital
+    public Camera cutsceneCamera;  // Câmera do hospital
     public Image fadeImage;  // Imagem usada para o efeito de fade
     public GameObject playerUI;
     public GameObject ambulancePlayer;
+    public GameObject patientCutscene;
 
     private AmbulancePlayer ambulanceControls;
     private AmbulanceLights ambulanceLights;
     private AmbulanceHealth ambulanceHealth;
     private AudioSource ambulanceAudioSource;
     public AudioSource[] aditionalAudioSource;
+    public PlayableDirector playableDirector;
     private DisplayQuickTimeEvent ambulanceDisplayQuickTimeEvent;
     private Timer timer;
+
 
     void Start()
     {
@@ -26,7 +31,9 @@ public class HospitalTransition : MonoBehaviour
         ambulanceAudioSource = ambulancePlayer.GetComponent<AudioSource>();
         ambulanceDisplayQuickTimeEvent = GetComponentInParent<DisplayQuickTimeEvent>();
         timer = playerUI.GetComponentInChildren<Timer>();
+        patientCutscene.SetActive(false);
         hospitalCamera.enabled = false;  // Desativa a câmera do hospital no início
+        cutsceneCamera.enabled = false;
         fadeImage.color = new Color(0, 0, 0, 0);  // Começa com a imagem invisível
     }
 
@@ -43,6 +50,13 @@ public class HospitalTransition : MonoBehaviour
         StartCoroutine(FadeTransition(playerCamera, hospitalCamera));
         playerUI.SetActive(true);
         ToggleAmbulanceControls();
+    }
+
+    public void SwitchToCutsceneCamera()
+    {
+        patientCutscene.SetActive(true);
+        playableDirector.Play();
+        StartCoroutine(FadeTransition(cutsceneCamera, hospitalCamera));
     }
 
     public void ToggleAmbulanceControls()

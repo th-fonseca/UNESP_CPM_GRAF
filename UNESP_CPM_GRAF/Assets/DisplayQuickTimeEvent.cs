@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class DisplayQuickTimeEvent : MonoBehaviour
 {
-    public enum QTEType { Sequence, RapidPress, SingleQuickPress }
+    public enum QTEType { Sequence, RapidPress }
     public QTEType currentQTEType;
 
     public GameObject QTEInterface;
@@ -14,11 +14,20 @@ public class DisplayQuickTimeEvent : MonoBehaviour
     public GameObject keyImagePrefab;
     public Transform keyImageParent;
     public Slider timerSlider;
+    public TextMeshProUGUI rapidPressCounterText;
+
+    public AudioClip successClip;
+    public AudioClip failureClip;
+    public AudioClip clickClip;
+
+    public AudioSource qteSource;
 
     public int sequenceLength = 5;
     public float sequenceDelay = 10f;
     public int totalQTEs = 3;
-    public float fadeDuration = 0.5f; // Duração do fade
+    public int rapidPressTarget = 5;     // Número de pressões para completar o RapidPress
+    public float rapidPressTimeLimit = 3f; // Tempo para completar o RapidPress
+    public float fadeDuration = 0.5f;
     private float startDelay = 1f;
 
     private List<KeyCode> generatedSequence;
@@ -28,9 +37,18 @@ public class DisplayQuickTimeEvent : MonoBehaviour
     private bool isQTEActive = false;
     private int completedQTECount = 0;
 
+    private KeyCode rapidPressKey;
+    private int rapidPressCount;
+    private float rapidPressTimer;
+
+    private HospitalTransition playCutscene;
+
+
     void Start()
     {
+        playCutscene =  GetComponentInParent<HospitalTransition>();
         QTEInterface.SetActive(false);
+        rapidPressCounterText.enabled = false;
     }
 
     void Awake()
@@ -43,25 +61,56 @@ public class DisplayQuickTimeEvent : MonoBehaviour
     {
         if (isQTEActive)
         {
-            HandleSequenceQTE();
+            if (currentQTEType == QTEType.Sequence)
+            {
+                HandleSequenceQTE();
+            }
+            else if (currentQTEType == QTEType.RapidPress)
+            {
+                HandleRapidPressQTE();
+            }
             UpdateTimerUI();
         }
     }
 
     public void StartQTE()
     {
-        StartCoroutine(DelayedStartQTE(startDelay));
+        // Inicia o QTE apenas uma vez com o delay
+        if (completedQTECount == 0)
+        {
+            StartCoroutine(DelayedStartQTE(startDelay));
+        }
+        else
+        {
+            StartNewQTE();  // Caso já esteja em progresso, inicia direto
+        }
     }
 
-    // Corrotina para iniciar o QTE após um delay
     private IEnumerator DelayedStartQTE(float delay)
     {
-        yield return new WaitForSeconds(delay); // Espera pelo tempo de delay
+        yield return new WaitForSeconds(delay); // Espera pelo tempo de delay inicial
+        StartNewQTE();  // Chama a função de iniciar um QTE
+    }
 
-        StartCoroutine(FadeQTEInterface(true)); // Inicia o fade-in da interface QTE
-        GenerateRandomSequence();
-        DisplaySequenceUI();
-        ResetQTE();
+    private void StartNewQTE()
+    {
+        QTEInterface.SetActive(true);
+        currentQTEType = (Random.value > 0.5f) ? QTEType.Sequence : QTEType.RapidPress;
+        StartCoroutine(FadeQTEInterface(true));
+
+        if (currentQTEType == QTEType.Sequence)
+        {
+            GenerateRandomSequence();
+            DisplaySequenceUI();
+        }
+        else if (currentQTEType == QTEType.RapidPress)
+        {
+            rapidPressCounterText.enabled = true;
+            GenerateRapidPress();
+            DisplayRapidPressUI();
+        }
+
+        ResetQTE();  // Reseta os parâmetros para o novo QTE
         isQTEActive = true;
     }
 
@@ -82,14 +131,20 @@ public class DisplayQuickTimeEvent : MonoBehaviour
         }
     }
 
+    private void GenerateRapidPress()
+    {
+        int randomIndex = Random.Range(0, possibleKeys.Count);
+        rapidPressKey = possibleKeys[randomIndex];
+        rapidPressCount = 0;
+        rapidPressTimer = rapidPressTimeLimit;
+    }
+
     private void DisplaySequenceUI()
     {
         ClearSequenceUI();
         foreach (KeyCode key in generatedSequence)
         {
             GameObject keyImageObj = Instantiate(keyImagePrefab, keyImageParent);
-
-            // Define a cor branca como padrão para a imagem
             Image keyImage = keyImageObj.GetComponent<Image>();
             if (keyImage != null)
             {
@@ -104,6 +159,26 @@ public class DisplayQuickTimeEvent : MonoBehaviour
 
             displayedKeys.Add(keyImageObj);
         }
+    }
+
+    private void DisplayRapidPressUI()
+    {
+        ClearSequenceUI();
+        GameObject keyImageObj = Instantiate(keyImagePrefab, keyImageParent);
+        Image keyImage = keyImageObj.GetComponent<Image>();
+        if (keyImage != null)
+        {
+            keyImage.color = Color.white;
+        }
+
+        TextMeshProUGUI keyText = keyImageObj.GetComponentInChildren<TextMeshProUGUI>();
+        if (keyText != null)
+        {
+            keyText.text = rapidPressKey.ToString();
+        }
+
+        rapidPressCounterText.text = "x" + rapidPressTarget.ToString(); // Mostra o contador inicial
+        displayedKeys.Add(keyImageObj);
     }
 
     private void ClearSequenceUI()
@@ -127,9 +202,8 @@ public class DisplayQuickTimeEvent : MonoBehaviour
 
         if (Input.GetKeyDown(generatedSequence[currentSequenceIndex]))
         {
-            // Inicia o fade-out da tecla pressionada corretamente
             StartCoroutine(FadeOutKey(displayedKeys[currentSequenceIndex]));
-
+            qteSource.PlayOneShot(clickClip);
             currentSequenceIndex++;
             sequenceTimer = sequenceDelay;
         }
@@ -144,34 +218,68 @@ public class DisplayQuickTimeEvent : MonoBehaviour
         }
     }
 
+    private void HandleRapidPressQTE()
+    {
+        rapidPressTimer -= Time.deltaTime;
+
+        if (Input.GetKeyDown(rapidPressKey))
+        {
+            rapidPressCount++;
+            rapidPressCounterText.text = "x" + (rapidPressTarget - rapidPressCount).ToString(); // Atualiza o contador
+
+            if (rapidPressCount >= rapidPressTarget)
+            {
+                rapidPressCounterText.enabled = false;
+                CompleteQTE(true);
+                return;
+            }
+        }
+        else if (Input.anyKeyDown && !Input.GetKeyDown(rapidPressKey))
+        {
+            rapidPressCounterText.enabled = false;
+            CompleteQTE(false);
+        }
+
+        if (rapidPressTimer <= 0)
+        {
+            rapidPressCounterText.enabled = false;
+            CompleteQTE(false);
+        }
+    }
+
     private void CompleteQTE(bool success)
     {
         Debug.Log(success ? "QTE Completed" : "QTE Failed");
 
         if (success)
         {
-            completedQTECount++; // Incrementa o contador de QTEs completados
-
+            qteSource.PlayOneShot(successClip);
+            completedQTECount++;
             if (completedQTECount >= totalQTEs)
             {
-                Debug.Log("All QTEs Completed! You win!");
-                StopQTE(); // Finaliza o QTE após completar o número total de sequências
+                playCutscene.SwitchToCutsceneCamera();
+                StopQTE();
             }
             else
             {
-                GenerateRandomSequence(); // Gera uma nova sequência
-                DisplaySequenceUI();      // Exibe a nova sequência na interface
-                ResetQTE();               // Reinicia a sequência
+                StartCoroutine(FadeQTEInterface(false));
+                isQTEActive = false; // Desativa para evitar contagens incorretas
+                StartCoroutine(DelayedStartNewQTE(2f)); // Inicia próxima sequência com delay
             }
         }
         else
         {
+            qteSource.PlayOneShot(failureClip);
             Debug.Log("QTE Failed! Try again.");
-            completedQTECount = 0;       // Reseta o contador em caso de falha
-            StopQTE();                   // Interrompe o QTE se falhar
+            completedQTECount = 0;  // Reinicia a contagem de QTEs completados em caso de falha
+            StopQTE();
         }
     }
-
+    private IEnumerator DelayedStartNewQTE(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        StartNewQTE();
+    }
 
     private void ResetQTE()
     {
@@ -182,13 +290,10 @@ public class DisplayQuickTimeEvent : MonoBehaviour
 
     private void UpdateTimerUI()
     {
-        if (timerSlider != null)
-        {
-            timerSlider.value = sequenceTimer / sequenceDelay;
-        }
+        float timeRemaining = currentQTEType == QTEType.RapidPress ? rapidPressTimer : sequenceTimer;
+        timerSlider.value = timeRemaining / sequenceDelay;
     }
 
-    // Corrotina para fade-in e fade-out da interface QTE
     private IEnumerator FadeQTEInterface(bool fadeIn)
     {
         float startAlpha = fadeIn ? 0 : 1;
@@ -214,7 +319,6 @@ public class DisplayQuickTimeEvent : MonoBehaviour
         }
     }
 
-    // Corrotina para fade-out das teclas pressionadas corretamente
     private IEnumerator FadeOutKey(GameObject keyObj)
     {
         Image keyImage = keyObj.GetComponent<Image>();
