@@ -40,12 +40,16 @@ public class DisplayQuickTimeEvent : MonoBehaviour
     private KeyCode rapidPressKey;
     private int rapidPressCount;
     private float rapidPressTimer;
+    public float qteScore;
+    private ComputeResult saveQteScore;
 
     private HospitalTransition playCutscene;
 
 
     void Start()
     {
+        qteScore = 0f;
+        saveQteScore = QTEInterface.GetComponentInParent<Canvas>().GetComponentInChildren<ComputeResult>();
         playCutscene =  GetComponentInParent<HospitalTransition>();
         QTEInterface.SetActive(false);
         rapidPressCounterText.enabled = false;
@@ -116,6 +120,7 @@ public class DisplayQuickTimeEvent : MonoBehaviour
 
     public void StopQTE()
     {
+
         isQTEActive = false;
         ClearSequenceUI();
         StartCoroutine(FadeQTEInterface(false));
@@ -205,7 +210,6 @@ public class DisplayQuickTimeEvent : MonoBehaviour
             StartCoroutine(FadeOutKey(displayedKeys[currentSequenceIndex]));
             qteSource.PlayOneShot(clickClip);
             currentSequenceIndex++;
-            sequenceTimer = sequenceDelay;
         }
         else if (Input.anyKeyDown && !Input.GetKeyDown(generatedSequence[currentSequenceIndex]))
         {
@@ -249,10 +253,10 @@ public class DisplayQuickTimeEvent : MonoBehaviour
 
     private void CompleteQTE(bool success)
     {
-        Debug.Log(success ? "QTE Completed" : "QTE Failed");
 
         if (success)
         {
+            qteScore += 500;
             qteSource.PlayOneShot(successClip);
             completedQTECount++;
             if (completedQTECount >= totalQTEs)
@@ -262,13 +266,15 @@ public class DisplayQuickTimeEvent : MonoBehaviour
             }
             else
             {
+                saveQteScore.QTEScore(qteScore);
                 StartCoroutine(FadeQTEInterface(false));
-                isQTEActive = false; // Desativa para evitar contagens incorretas
-                StartCoroutine(DelayedStartNewQTE(2f)); // Inicia próxima sequência com delay
+                isQTEActive = false; 
+                StartCoroutine(DelayedStartNewQTE(2f));
             }
         }
         else
         {
+            saveQteScore.QTEScore(qteScore);
             qteSource.PlayOneShot(failureClip);
             Debug.Log("QTE Failed! Try again.");
             completedQTECount = 0;  // Reinicia a contagem de QTEs completados em caso de falha

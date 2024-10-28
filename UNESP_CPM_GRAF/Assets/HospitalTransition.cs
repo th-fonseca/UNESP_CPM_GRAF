@@ -18,10 +18,12 @@ public class HospitalTransition : MonoBehaviour
     private AmbulanceHealth ambulanceHealth;
     private AudioSource ambulanceAudioSource;
     public AudioSource[] aditionalAudioSource;
+    public AudioClip victoryClip;
+    private AudioSource victorySource;
     public PlayableDirector playableDirector;
     private DisplayQuickTimeEvent ambulanceDisplayQuickTimeEvent;
+    private ComputeResult computeScore;
     private Timer timer;
-
 
     void Start()
     {
@@ -31,6 +33,8 @@ public class HospitalTransition : MonoBehaviour
         ambulanceAudioSource = ambulancePlayer.GetComponent<AudioSource>();
         ambulanceDisplayQuickTimeEvent = GetComponentInParent<DisplayQuickTimeEvent>();
         timer = playerUI.GetComponentInChildren<Timer>();
+        computeScore = playerUI.GetComponentInParent<Canvas>().GetComponentInChildren<ComputeResult>();
+        victorySource = GetComponent<AudioSource>();
         patientCutscene.SetActive(false);
         hospitalCamera.enabled = false;  // Desativa a câmera do hospital no início
         cutsceneCamera.enabled = false;
@@ -39,6 +43,7 @@ public class HospitalTransition : MonoBehaviour
 
     public void SwitchToHospitalCamera()
     {
+        computeScore.SaveVehicleScore(ambulanceHealth.healthValue, ambulanceHealth.maxHealth, timer.timeRemaining, timer.startTimeInSeconds);
         StartCoroutine(FadeTransition(hospitalCamera, playerCamera));
         playerUI.SetActive(false);
         ToggleAmbulanceControls();
@@ -56,7 +61,7 @@ public class HospitalTransition : MonoBehaviour
     {
         patientCutscene.SetActive(true);
         playableDirector.Play();
-        StartCoroutine(FadeTransition(cutsceneCamera, hospitalCamera));
+        StartCoroutine(FadeTransitionWithScoreDisplay(cutsceneCamera, hospitalCamera));
     }
 
     public void ToggleAmbulanceControls()
@@ -70,6 +75,21 @@ public class HospitalTransition : MonoBehaviour
         {
             audioSource.enabled = !audioSource.enabled;
         }
+    }
+
+    private IEnumerator FadeTransitionWithScoreDisplay(Camera targetCamera, Camera currentCamera)
+    {
+        yield return StartCoroutine(Fade(1f, 0.5f));
+
+        currentCamera.enabled = false;
+        targetCamera.enabled = true;
+
+        yield return StartCoroutine(Fade(0f, 0.5f));
+
+        // Espera antes de exibir a pontuação
+        yield return new WaitForSeconds(5f);  // Tempo de delay desejado
+        victorySource.PlayOneShot(victoryClip);
+        computeScore.DisplayScore();
     }
 
     private IEnumerator FadeTransition(Camera targetCamera, Camera currentCamera)

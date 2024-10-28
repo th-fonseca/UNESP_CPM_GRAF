@@ -5,7 +5,7 @@ using TMPro;  // Certifique-se de incluir o namespace do TextMeshPro
 public class Timer : MonoBehaviour
 {
     public TextMeshProUGUI timerText; 
-    private float timeRemaining; 
+    public float timeRemaining; 
     public float startTimeInSeconds = 300f;
     private bool timerRunning = false; 
 

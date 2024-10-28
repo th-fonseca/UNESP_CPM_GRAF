@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class AmbulanceHealth : MonoBehaviour
 {
-    private float maxHealth;
+    public float maxHealth;
     private float animationDuration = 0.25f;
     private float maxDamage = 15f;
     private float damageTime = 0f;
