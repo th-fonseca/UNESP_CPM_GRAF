@@ -2178,12 +2178,12 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "Velocidade: Exibe a velocidade atual da ambul\xE2ncia\n\nVida: Representa
-    a durabilidade da ambul\xE2ncia.\n\nSirene: Indica o tempo de cooldown da sirene.
-    Use-a estrategicamente para abrir caminho no tr\xE2nsito e se atente ao cooldown
-    antes de usar novamente.\n\nTempo Remanescente: Mostra o tempo restante para
-    completar a miss\xE3o.\n\nDestino (Waypoint): Exibe a localiza\xE7\xE3o do pr\xF3ximo
-    objetivo, como o paciente ou o hospital. Siga o waypoint para navegar corretamente
-    no mapa."
+    a vida restante da ambul\xE2ncia.\n\nSirene: Indica o tempo de cooldown da sirene.
+    Use-a estrategicamente para atravessar sinais vermelho no tr\xE2nsito e se atente
+    ao cooldown antes de usar novamente.\n\nTempo Remanescente: Mostra o tempo restante
+    para completar a miss\xE3o.\n\nDestino (Waypoint): Exibe a localiza\xE7\xE3o
+    do pr\xF3ximo objetivo, como o paciente ou o hospital. Siga o waypoint para navegar
+    corretamente no mapa."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
