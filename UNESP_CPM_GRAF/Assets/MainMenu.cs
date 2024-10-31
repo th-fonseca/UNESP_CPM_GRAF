@@ -5,9 +5,33 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
+
+    public GameObject mainMenu;
+    public GameObject tutorialMenu;
+    public GameObject levelSelectMenu;
+
+    void Start()
+    {
+        tutorialMenu.SetActive(false);
+        levelSelectMenu.SetActive(false);
+    }
+
     public void PlayGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        levelSelectMenu.SetActive(true);
+        mainMenu.SetActive(false);
+    }
+
+    public void TutorialGame()
+    {
+        mainMenu.SetActive(false);
+        tutorialMenu.SetActive(true);
+    }
+
+    public void GoBack()
+    {
+        mainMenu.SetActive(true);
+        levelSelectMenu.SetActive(false);
     }
 
     public void QuitGame()

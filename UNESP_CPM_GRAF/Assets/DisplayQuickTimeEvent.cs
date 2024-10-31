@@ -274,10 +274,11 @@ public class DisplayQuickTimeEvent : MonoBehaviour
         }
         else
         {
+            qteScore = 0;
             saveQteScore.QTEScore(qteScore);
             qteSource.PlayOneShot(failureClip);
-            Debug.Log("QTE Failed! Try again.");
             completedQTECount = 0;  // Reinicia a contagem de QTEs completados em caso de falha
+            playCutscene.SwitchToCutsceneCamera();
             StopQTE();
         }
     }
