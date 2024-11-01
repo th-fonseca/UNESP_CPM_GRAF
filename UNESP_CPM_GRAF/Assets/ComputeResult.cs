@@ -17,6 +17,7 @@ public class ComputeResult : MonoBehaviour
     public TextMeshProUGUI[] bottomDescriptions;
     public TextMeshProUGUI[] bottomScores;
 
+    public float difficultyMultiplier;
     private float healthValue;
     private float timeValue;
     private float vehicleScore;
@@ -43,7 +44,7 @@ public class ComputeResult : MonoBehaviour
 
     public void DisplayScore()
     {
-        totalScore = vehicleScore + qteValue;
+        totalScore = (vehicleScore * difficultyMultiplier) + qteValue;
 
         // Preenchendo valores nas posições corretas
         topScores[0].text = vehicleScore.ToString("F0");  // Pontuação do veículo

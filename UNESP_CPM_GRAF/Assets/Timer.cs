@@ -7,10 +7,12 @@ public class Timer : MonoBehaviour
     public TextMeshProUGUI timerText; 
     public float timeRemaining; 
     public float startTimeInSeconds = 300f;
-    private bool timerRunning = false; 
+    private bool timerRunning = false;
+    public FailMission triggerFail;
 
     void Start()
     {
+
         SetTime(startTimeInSeconds);
         StartTimer(); 
     }
@@ -25,6 +27,7 @@ public class Timer : MonoBehaviour
             if (timeRemaining <= 0)
             {
                 timeRemaining = 0;
+                triggerFail.Fail();
                 StopTimer();  
                 UpdateTimerDisplay();
             }

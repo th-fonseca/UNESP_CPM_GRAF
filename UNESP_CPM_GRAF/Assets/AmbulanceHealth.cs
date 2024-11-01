@@ -22,10 +22,12 @@ public class AmbulanceHealth : MonoBehaviour
     public AudioSource audioSource; // Fonte de áudio
 
     private AmbulanceLights ambulanceLights;
+    private FailMission triggerFail;
 
     void Start()
     {
         ambulanceLights = GetComponent<AmbulanceLights>();
+        triggerFail = GetComponent<FailMission>();
         maxHealth = healthValue;
     }
 
@@ -69,6 +71,7 @@ public class AmbulanceHealth : MonoBehaviour
                 
             }
         }
+        if (healthValue == 0f) triggerFail.Fail();
     }
 
     IEnumerator HealthChange(float oldHealth, float newHealth)

@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class HospitalTransition : MonoBehaviour
@@ -90,6 +91,15 @@ public class HospitalTransition : MonoBehaviour
         yield return new WaitForSeconds(5f);  // Tempo de delay desejado
         victorySource.PlayOneShot(victoryClip);
         computeScore.DisplayScore();
+
+        yield return new WaitForSeconds(5f);
+        StartCoroutine(ReturnToMainMenu());
+    }
+
+    private IEnumerator ReturnToMainMenu()
+    {
+        yield return StartCoroutine(Fade(1f, 0.5f));  // Fade out para o menu principal
+        SceneManager.LoadScene("MenuScene");  // Nome da cena do menu principal
     }
 
     private IEnumerator FadeTransition(Camera targetCamera, Camera currentCamera)
@@ -102,7 +112,7 @@ public class HospitalTransition : MonoBehaviour
         yield return StartCoroutine(Fade(0f, 0.5f));
     }
 
-    private IEnumerator Fade(float targetAlpha, float duration)
+    public IEnumerator Fade(float targetAlpha, float duration)
     {
         Color color = fadeImage.color;
         float startAlpha = color.a;
