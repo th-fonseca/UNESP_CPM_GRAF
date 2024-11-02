@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEditor.VersionControl;
 using UnityEngine;
 
-public class AmbulanceMovement : MonoBehaviour
+public class AmbulancePlayer : MonoBehaviour
 {
     //Colisores
     public WheelCollider frontLeftWheelCollider;
@@ -19,8 +20,8 @@ public class AmbulanceMovement : MonoBehaviour
     public Transform rearRightWheelTransform;
 
     public Material brakeLights;
-    public Material headLights;
-    public Material blueLights;
+    //public Material headLights;
+    //public Material blueLights;
 
 
     public Light leftHeadLight;
@@ -32,6 +33,7 @@ public class AmbulanceMovement : MonoBehaviour
     public float motorForce = 12000f;
     public float maxSpeed = 50f;
     private float currentSpeed = 0f;
+    private bool isReversing = false;
 
     //Breque
     private bool isBreaking;
@@ -42,13 +44,6 @@ public class AmbulanceMovement : MonoBehaviour
     public float maxSteerAngle = 30f;
     private float currentSteerAngle = 0f;
 
-    //Luzes
-    private bool isSirenOn = false;
-    private Coroutine sirenCoroutine;
-
-    private bool isHeadlightOn = false;
-    private float lastLightToggleTime = 0f;
-
 
     //Som
     public AudioClip engineSound;
@@ -57,18 +52,11 @@ public class AmbulanceMovement : MonoBehaviour
     public AudioClip hornSound;
     public AudioSource hornAudioSource;
 
-    public AudioClip sirenSound;
-    public AudioSource sirenAudioSource;
 
 
     void Start()
     {
-        SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
         SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
-        SetLightEmission(blueLights, isSirenOn, Color.cyan, Color.black);
-        leftHeadLight.enabled = false;
-        rightHeadLight.enabled = false;
-        sirenAudioSource.clip = sirenSound;
         hornAudioSource.clip = hornSound;
         engineAudioSource.clip = engineSound;
         engineAudioSource.Play();
@@ -84,11 +72,11 @@ public class AmbulanceMovement : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");
         float moveX = Input.GetAxis("Horizontal");
         isBreaking = Input.GetKey(KeyCode.Space);
+        isReversing = Input.GetKey(KeyCode.S);
 
         MoveVertically(moveZ);
         MoveHorizontally(moveX);
         UpdateWheels();
-        UpdateLights();
         UpdateSounds();
         ApplyBrakes();
     }
@@ -96,7 +84,7 @@ public class AmbulanceMovement : MonoBehaviour
     void ApplyBrakes()
     {
         currentbreakForce = isBreaking ? breakForce : 0f;
-        SetLightEmission(brakeLights, isBreaking, Color.red, Color.black);
+        SetLightEmission(brakeLights, isBreaking ? isBreaking : isReversing, isBreaking ? Color.red : (isReversing ? Color.grey : Color.black), Color.black);
         frontRightWheelCollider.brakeTorque = currentbreakForce;
         frontLeftWheelCollider.brakeTorque = currentbreakForce;
         rearLeftWheelCollider.brakeTorque = currentbreakForce;
@@ -106,7 +94,7 @@ public class AmbulanceMovement : MonoBehaviour
     void MoveVertically(float moveZ)
     {
         currentSpeed = this.GetComponent<Rigidbody>().velocity.magnitude * 3.6f;
-
+        
         if (moveZ != 0 && currentSpeed <= maxSpeed)
         {
             rearLeftWheelCollider.motorTorque = motorForce * moveZ;
@@ -137,49 +125,6 @@ public class AmbulanceMovement : MonoBehaviour
         {
             float needleAngle = Mathf.Lerp(0f, -270f, Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(currentSpeed)));
             speedometerNeedle.localRotation = Quaternion.Euler(0f, 0f, needleAngle);
-        }
-    }
-
-    void UpdateLights()
-    {
-        if (Input.GetKey(KeyCode.F) && Time.time - lastLightToggleTime > 0.5f)
-        {
-            isHeadlightOn = !isHeadlightOn;
-            SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
-            SetLightEmission(headLights, isHeadlightOn, Color.white, Color.black);
-            lastLightToggleTime = Time.time;
-            leftHeadLight.enabled = isHeadlightOn;
-            rightHeadLight.enabled = isHeadlightOn;
-        }
-
-        if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time - lastLightToggleTime > 0.5f)
-        {
-            isSirenOn = !isSirenOn;
-
-            if (isSirenOn)
-            {
-                sirenCoroutine = StartCoroutine(BlinkSirenLights());
-                sirenAudioSource.Play();
-            }
-            else
-            {
-                StopCoroutine(sirenCoroutine);
-                SetLightEmission(blueLights, false, Color.cyan, Color.black); // Apagar a sirene
-                sirenAudioSource.Stop();
-            }
-        }
-    }
-
-    IEnumerator BlinkSirenLights()
-    {
-        while (true)
-        {
-            blueLights.SetColor("_EmissionColor", Color.cyan);
-            yield return new WaitForSeconds(0.1f); // Tempo de piscar
-
-            // Alterna as luzes
-            blueLights.SetColor("_EmissionColor", Color.black);
-            yield return new WaitForSeconds(0.1f); // Tempo de piscar
         }
     }
 
