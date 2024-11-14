@@ -25,6 +25,7 @@ public class HospitalTransition : MonoBehaviour
     private DisplayQuickTimeEvent ambulanceDisplayQuickTimeEvent;
     private ComputeResult computeScore;
     private Timer timer;
+    private MusicManager manager;
 
     void Start()
     {
@@ -40,10 +41,12 @@ public class HospitalTransition : MonoBehaviour
         hospitalCamera.enabled = false;  // Desativa a câmera do hospital no início
         cutsceneCamera.enabled = false;
         fadeImage.color = new Color(0, 0, 0, 0);  // Começa com a imagem invisível
+        manager = MusicManager.Instance;
     }
 
     public void SwitchToHospitalCamera()
     {
+        manager.ToggleMusicWithFade();
         computeScore.SaveVehicleScore(ambulanceHealth.healthValue, ambulanceHealth.maxHealth, timer.timeRemaining, timer.startTimeInSeconds);
         StartCoroutine(FadeTransition(hospitalCamera, playerCamera));
         playerUI.SetActive(false);
@@ -60,6 +63,7 @@ public class HospitalTransition : MonoBehaviour
 
     public void SwitchToCutsceneCamera()
     {
+        manager.StopMusicWithFade();
         patientCutscene.SetActive(true);
         playableDirector.Play();
         StartCoroutine(FadeTransitionWithScoreDisplay(cutsceneCamera, hospitalCamera));
