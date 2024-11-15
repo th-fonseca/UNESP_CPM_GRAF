@@ -37,11 +37,19 @@ public class MusicManager : MonoBehaviour
         AudioClip newClip = audioSource.clip == mainMusic ? hospitalClip : mainMusic;
         StartCoroutine(FadeOutInMusic(newClip));
     }
+    public void SetMainMusic(AudioClip newMainMusic, bool playImmediately = false)
+    {
+        mainMusic = newMainMusic;
+        if (playImmediately)
+        {
+            PlayMusicFromStart();
+        }
+    }
 
     public void PlayMusicFromStart()
     {
         audioSource.Stop();
-        audioSource.volume = 0.25f;
+        audioSource.volume = 0.15f;
         audioSource.clip = mainMusic;
         audioSource.Play();
     }
@@ -78,9 +86,9 @@ public class MusicManager : MonoBehaviour
         audioSource.Play();
         for (float t = 0; t < fadeDuration; t += Time.deltaTime)
         {
-            audioSource.volume = Mathf.Lerp(0, 1, t / fadeDuration);
+            audioSource.volume = Mathf.Lerp(0, 0.15f, t / fadeDuration);
             yield return null;
         }
-        audioSource.volume = 0.25f;
+        audioSource.volume = 0.15f;
     }
 }

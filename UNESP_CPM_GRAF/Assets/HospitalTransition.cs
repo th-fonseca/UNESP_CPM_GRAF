@@ -42,6 +42,7 @@ public class HospitalTransition : MonoBehaviour
         cutsceneCamera.enabled = false;
         fadeImage.color = new Color(0, 0, 0, 0);  // Começa com a imagem invisível
         manager = MusicManager.Instance;
+        manager.PlayMusicFromStart();
     }
 
     public void SwitchToHospitalCamera()
