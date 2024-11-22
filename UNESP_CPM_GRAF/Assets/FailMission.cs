@@ -12,10 +12,12 @@ public class FailMission : MonoBehaviour
 
     private HospitalTransition deactivateControls;
     private bool hasFailed = false;
+    private MusicManager manager;
     void Start()
     {
         failScreen.SetActive(false);
         deactivateControls = hospital.GetComponent<HospitalTransition>();
+        manager = MusicManager.Instance;
     }
 
 
@@ -23,7 +25,7 @@ public class FailMission : MonoBehaviour
     {
         if (hasFailed) return;  // Retorna se a função já foi chamada
         hasFailed = true;  // Marca a função como chamada
-
+        manager.StopMusicWithFade();
         StartCoroutine(deactivateControls.Fade(1f, 0.5f));
         failAudio.PlayOneShot(failSound);
         deactivateControls.ToggleAmbulanceControls();
@@ -33,6 +35,7 @@ public class FailMission : MonoBehaviour
 
     public void RetryMission()
     {
+        manager.PlayMusicFromStart();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
